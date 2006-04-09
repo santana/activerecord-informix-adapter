@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.1 2006/03/27 07:48:43 santana Exp $
+# $Id: informix_adapter.rb,v 1.2 2006/04/09 08:39:28 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -187,7 +187,7 @@ module ActiveRecord
         c = @connection.cursor("SELECT tabname from systables WHERE tabid > 99")
         tables = c.open.fetch_all
         c.drop
-        return !tables.nil?? tables.flatten: []
+        return tables.nil?? []: tables.flatten
       end
 
       def columns(table_name, name = nil)
@@ -272,11 +272,9 @@ module ActiveRecord
           rows = []
           sql.gsub!(/=\s*null/i, 'IS NULL')
           c = log(sql, name) { @connection.cursor(sql) }
-          c.open
-          while row = c.fetch_hash
+          c.open.each_hash {|row|
             rows << row
-          end
-          c.drop
+          }.drop
           rows
         end
     end #class InformixAdapter < AbstractAdapter
