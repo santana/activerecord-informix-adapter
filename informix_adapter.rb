@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.2 2006/04/09 08:39:28 santana Exp $
+# $Id: informix_adapter.rb,v 1.3 2006/04/10 01:36:02 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -54,22 +54,32 @@ module ActiveRecord
       end
     end
 
+    def quoted_values(include_primary_key = false)
+      params = []
+      attributes.keys.sort.each { |name|
+        column = column_for_attribute(name)
+        next if !column
+        if [:binary, :text].include?(column.type) && attributes[name].is_a?(String)
+          v = StringIO.new(attributes[name])
+        else
+          v = attributes[name]
+        end
+        if !column.primary
+          params << v
+        elsif include_primary_key
+          params << 0
+        end
+      }
+      params
+    end
+
     def create
       query =<<-EOS
         INSERT INTO #{self.class.table_name} (#{quoted_column_names.join(', ')})
         VALUES(?#{", ?"*(attributes.size - 1)})
       EOS
 
-      params = []
-      attributes.keys.sort.each { |name|
-        if column = column_for_attribute(name)
-          if column.primary
-            params << 0
-          else
-            params << attributes[name]
-          end
-        end
-      }
+      params = quoted_values(true)
       self.id = connection.insert(query, params, "#{self.class.name} Create")
       @new_record = false
     end
@@ -81,24 +91,12 @@ module ActiveRecord
         WHERE #{self.class.primary_key} = #{quote(id)}
       EOS
 
-      params = []
-      attributes.keys.sort.each { |name|
-        column = column_for_attribute(name)
-        params << attributes[name] if column && !column.primary
-      }
+      params = quoted_values
       connection.update(query, params, "#{self.class.sequence_name} Update")
     end
   end # class Base
 
   module ConnectionAdapters
-    class InformixColumn < Column
-      def type_cast(value)
-        return nil if value.nil?
-        return StringIO.new(value) if type == :text || type == :binary
-        super
-      end
-    end
-
     # This adapter requires the Informix driver for Ruby
     # http://ruby-informix.sourceforge.net
     #
@@ -153,6 +151,7 @@ module ActiveRecord
           stmt = @connection.prepare(sql)
           stmt[*params]
         }
+        id_value
       end
 
       alias_method :update, :insert
@@ -194,7 +193,7 @@ module ActiveRecord
         result = @connection.columns(table_name)
         columns = []
         result.each { |column|
-          columns << InformixColumn.new(column[:name], column[:default],
+          columns << Column.new(column[:name], column[:default],
             make_type(column[:stype], column[:precision]), column[:nullable])
         }
         columns
