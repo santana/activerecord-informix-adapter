@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.3 2006/04/10 01:36:02 santana Exp $
+# $Id: informix_adapter.rb,v 1.4 2006/04/11 16:34:13 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -150,6 +150,7 @@ module ActiveRecord
         log(sql, name) {
           stmt = @connection.prepare(sql)
           stmt[*params]
+          stmt.drop
         }
         id_value
       end
