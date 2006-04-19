@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.4 2006/04/11 16:34:13 santana Exp $
+# $Id: informix_adapter.rb,v 1.5 2006/04/19 03:37:28 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -269,12 +269,10 @@ module ActiveRecord
 
       private
         def select(sql, name = nil)
-          rows = []
           sql.gsub!(/=\s*null/i, 'IS NULL')
           c = log(sql, name) { @connection.cursor(sql) }
-          c.open.each_hash {|row|
-            rows << row
-          }.drop
+          rows = c.open.fetch_hash_all || []
+          c.drop
           rows
         end
     end #class InformixAdapter < AbstractAdapter
