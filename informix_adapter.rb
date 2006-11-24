@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.7 2006/11/24 02:18:09 santana Exp $
+# $Id: informix_adapter.rb,v 1.8 2006/11/24 05:05:54 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -40,8 +40,8 @@ module ActiveRecord
       database    = config[:database].to_s
       username    = config[:username]
       password    = config[:password]
-      conn        = Informix.connect(database, username, password)
-      ConnectionAdapters::InformixAdapter.new(conn, logger)
+      db          = Informix.connect(database, username, password)
+      ConnectionAdapters::InformixAdapter.new(db, logger)
     end
 
     after_save :write_lobs
@@ -54,9 +54,10 @@ module ActiveRecord
           stmt = connection.prepare(qry)
           stmt.execute(StringIO.new(value))
           stmt.drop
-          puts "quote(id) == #{quote(id)}"
         }
       end
+
+      private :write_lobs
     end
 
   end # class Base
@@ -72,6 +73,13 @@ module ActiveRecord
     # * <tt>:password</tt>  -- Defaults to nothing.
 
     class InformixAdapter < AbstractAdapter
+      def initialize(db, logger)
+        super
+        stmt = db.prepare("select dbinfo('version', 'major') version from systables where tabid = 1")
+        @ifx_version = stmt.execute['version'].to_i
+        stmt.drop
+      end
+
       def native_database_types
         {
           :primary_key => "serial primary key",
@@ -144,8 +152,11 @@ module ActiveRecord
       end
 
       def add_limit_offset!(sql, options)
-        if limit = options[:limit]
-          sql.sub!(/^select /i,"SELECT FIRST #{limit} ") 
+        if options[:limit]
+          limit = "FIRST #{options[:limit]}"
+          # SKIP available only in IDS >= 10
+          offset = @ifx_version >= 10 && options[:offset]? "SKIP #{options[:offset]}": ""
+          sql.sub!(/^select /i,"SELECT #{offset} #{limit} ")
         end
         sql
       end
