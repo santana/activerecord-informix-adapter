@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.6 2006/04/22 22:08:37 santana Exp $
+# $Id: informix_adapter.rb,v 1.7 2006/11/24 02:18:09 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -44,56 +44,21 @@ module ActiveRecord
       ConnectionAdapters::InformixAdapter.new(conn, logger)
     end
 
-    def comma_pair_list(hash)
-      hash.keys.sort*" = ?, " + " = ?"
-    end
-
-    def quoted_column_names(attributes = attributes_with_quotes)
-      attributes.keys.sort.collect do |column_name|
-        self.class.connection.quote_column_name(column_name)
+    after_save :write_lobs
+    def write_lobs
+      if connection.is_a?(ConnectionAdapters::InformixAdapter)
+        self.class.columns.select { |c| [:text, :binary].include?(c.type) }.each { |c|
+          value = self[c.name]
+          next if value.nil?  || value == ''
+          qry = "update #{self.class.table_name} set #{c.name} = ? where #{self.class.primary_key} = #{quote(id)}"
+          stmt = connection.prepare(qry)
+          stmt.execute(StringIO.new(value))
+          stmt.drop
+          puts "quote(id) == #{quote(id)}"
+        }
       end
     end
 
-    def quoted_values(include_primary_key = false)
-      params = []
-      attributes.keys.sort.each { |name|
-        column = column_for_attribute(name)
-        next if !column
-        if [:binary, :text].include?(column.type) && attributes[name].is_a?(String)
-          v = StringIO.new(attributes[name])
-        else
-          v = attributes[name]
-        end
-        if !column.primary
-          params << v
-        elsif include_primary_key
-          params << 0
-        end
-      }
-      params
-    end
-
-    def create
-      query =<<-EOS
-        INSERT INTO #{self.class.table_name} (#{quoted_column_names.join(', ')})
-        VALUES(?#{", ?"*(attributes.size - 1)})
-      EOS
-
-      params = quoted_values(true)
-      self.id = connection.insert(query, params, "#{self.class.name} Create")
-      @new_record = false
-    end
-
-    def update
-      query =<<-EOS
-        UPDATE #{self.class.table_name}
-        SET  #{quoted_comma_pair_list(connection,attributes_with_quotes(false))}
-        WHERE #{self.class.primary_key} = #{quote(id)}
-      EOS
-
-      params = quoted_values
-      connection.update(query, params, "#{self.class.sequence_name} Update")
-    end
   end # class Base
 
   module ConnectionAdapters
@@ -126,9 +91,17 @@ module ActiveRecord
       def adapter_name
         'Informix'
       end
-      
+
+      def prefetch_primary_key?(table_name = nil)
+        true
+      end
+ 
       def supports_migrations? #:nodoc:
         false # XXX yet
+      end
+
+      def default_sequence_name(table, column) #:nodoc:
+        "#{table}_seq"
       end
 
       # DATABASE STATEMENTS =====================================
@@ -146,16 +119,16 @@ module ActiveRecord
         log(sql, name) { @connection.do(sql) }
       end
 
-      def insert(sql, params, name= nil, pk= nil, id_value= nil, sq_name = nil)
-        log(sql, name) {
-          stmt = @connection.prepare(sql)
-          stmt[*params]
-          stmt.drop
-        }
+      def prepare(sql, name = nil)
+        log(sql, name) { @connection.prepare(sql) }
+      end
+
+      def insert(sql, name= nil, pk= nil, id_value= nil, sequence_name = nil)
+        log(sql, name) { @connection.do(sql) }
         id_value
       end
 
-      alias_method :update, :insert
+      alias_method :update, :execute
       alias_method :delete, :execute
 
       def begin_db_transaction
@@ -177,9 +150,23 @@ module ActiveRecord
         sql
       end
 
+      def next_sequence_value(sequence_name)
+        select_one("select #{sequence_name}.nextval id from systables where tabid=1")['id']
+      end
+
       # QUOTING ===========================================
       def quote_string(string)
         string.gsub(/\'/, "''")
+      end
+
+      def quote(value, column = nil)
+        if column && [:binary, :text].include?(column.type)
+          return "NULL"
+        end
+        if column && column.type == :date
+          return "'#{value.mon}/#{value.day}/#{value.year}'"
+        end
+        super
       end
 
       # SCHEMA STATEMENTS =====================================
@@ -237,8 +224,19 @@ module ActiveRecord
         indexes
       end
             
+      def create_table(name, options = {})
+        super(name, options)
+        execute("CREATE SEQUENCE #{name}_seq")
+      end
+
       def rename_table(name, new_name)
         execute("RENAME TABLE #{name} TO #{new_name}")
+        execute("RENAME SEQUENCE #{name}_seq TO #{new_name}_seq")
+      end
+
+      def drop_table(name)
+        super(name)
+        execute("DROP SEQUENCE #{name}_seq")
       end
       
       def rename_column(table, column, new_column_name)
