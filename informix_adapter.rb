@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.8 2006/11/24 05:05:54 santana Exp $
+# $Id: informix_adapter.rb,v 1.9 2006/11/25 20:02:49 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -45,6 +45,7 @@ module ActiveRecord
     end
 
     after_save :write_lobs
+    private
     def write_lobs
       if connection.is_a?(ConnectionAdapters::InformixAdapter)
         self.class.columns.select { |c| [:text, :binary].include?(c.type) }.each { |c|
@@ -56,10 +57,7 @@ module ActiveRecord
           stmt.drop
         }
       end
-
-      private :write_lobs
     end
-
   end # class Base
 
   module ConnectionAdapters
