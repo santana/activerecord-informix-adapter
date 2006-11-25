@@ -1,0 +1,37 @@
+Rails/Informix installation
+----------------------------
+
+1. Requirements
+
+	* Ruby/Informix 0.2.0 or above
+
+
+2. Installation instructions
+
+  Copy the file informix_adapter.rb into the directory:
+
+  $RUBYLIB/gems/1.8/gems/activerecord-*/lib/active_record/connection_adapters/
+
+  where RUBYLIB is probably /usr/local/lib/ruby in Unix, and C:\ruby\lib\ruby
+  in Windows.
+
+  Then edit the file:
+
+  $RUBYLIB/gems/1.8/gems/activerecord-*/lib/active_record.rb
+
+  to add "informix" to RAILS_CONNECTION_ADAPTERS:
+
+  RAILS_CONNECTION_ADAPTERS = %w( mysql postgresql sqlite firebird sqlserver db2 oracle sybase openbase informix)
+
+
+3. Rails configuration
+
+  The adapter has three options: database, user and password. Only database is
+  mandatory. A sample database.yml file would look like this:
+
+  development:
+    adapter: informix
+    database: stores
+
+  If no user and password are specified, the user running the web server is
+  used. 
