@@ -12,14 +12,16 @@ found at http://rails-informix.rubyforge.org
 
 1. Rails configuration
 
-  The adapter has three options: database, user and password. Only database is
-  mandatory. A sample database.yml file would look like this:
+  The adapter has three options: database, username and password. Only
+  database is mandatory. A sample database.yml file would look like this:
 
   development:
     adapter: informix
-    database: stores
+    database: dbname@dbserver
+    username: santana
+    password: secret
 
-  If no user and password are specified, the user running the web server is
+  If no username and password are specified, the user running the web server is
   used.
 
 
@@ -32,7 +34,7 @@ found at http://rails-informix.rubyforge.org
       create table customers(id serial, name varchar(40));
       create sequence customers_seq;
 
-  * BYTE/TEXT columns must be NULLable.
+  * BYTE/TEXT columns must allow NULLs.
 
 
 3. Caveats
