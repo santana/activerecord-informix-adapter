@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.9 2006/11/25 20:02:49 santana Exp $
+# $Id: informix_adapter.rb,v 1.10 2006/12/24 01:21:24 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -252,15 +252,12 @@ module ActiveRecord
         execute("RENAME COLUMN #{table}.#{column} TO #{new_column_name}")
       end
       
-      # XXX
       def change_column(table_name, column_name, type, options = {}) #:nodoc:
-        super
+        sql = "ALTER TABLE #{table_name} MODIFY #{column_name} #{type_to_sql(type, options[:limit])}"
+        add_column_options!(sql, options)
+        execute(sql)
       end
 
-      def change_column_default(table_name, column_name, default)
-        super
-      end
-      
       def remove_index(table_name, options = {})
         execute("DROP INDEX #{index_name(table_name, options)}")
       end
