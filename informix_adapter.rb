@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.10 2006/12/24 01:21:24 santana Exp $
+# $Id: informix_adapter.rb,v 1.11 2007/10/14 06:40:48 santana Exp $
 
 # Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -103,7 +103,7 @@ module ActiveRecord
       end
  
       def supports_migrations? #:nodoc:
-        false # XXX yet
+        true
       end
 
       def default_sequence_name(table, column) #:nodoc:
