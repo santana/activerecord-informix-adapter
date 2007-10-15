@@ -22,3 +22,8 @@ Rails/Informix installation
   to add "informix" to RAILS_CONNECTION_ADAPTERS:
 
   RAILS_CONNECTION_ADAPTERS = %w( mysql postgresql sqlite firebird sqlserver db2 oracle sybase openbase informix)
+
+
+3. Installation instructions for Ruby on Rails 2.x
+
+  gem install activerecord-informix-adapter
