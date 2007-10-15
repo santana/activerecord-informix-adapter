@@ -39,8 +39,8 @@ found at http://rails-informix.rubyforge.org
 
 3. Caveats
 
-  * Prefer Informix 10 over Informix 9. Rails/Informix makes use of the SKIP
-    option for pagination, which is only available since Informix 10.
+  * Prefer Informix 10 or above over Informix 9. Rails/Informix makes use of
+    the SKIP option for pagination, which is only available since Informix 10.
 
 -----------------------------------------
 Gerardo Santana <gerardo.santana gmail>
