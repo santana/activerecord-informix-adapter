@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.12 2007/10/15 05:20:42 santana Exp $
+# $Id: informix_adapter.rb,v 1.13 2007/10/15 16:40:00 santana Exp $
 
 # Copyright (c) 2006-2007, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -62,7 +62,7 @@ module ActiveRecord
 
   module ConnectionAdapters
     # This adapter requires the Informix driver for Ruby
-    # http://ruby-informix.sourceforge.net
+    # http://ruby-informix.rubyforge.org
     #
     # Options:
     #
