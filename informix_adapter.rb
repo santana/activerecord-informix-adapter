@@ -1,6 +1,6 @@
-# $Id: informix_adapter.rb,v 1.11 2007/10/14 06:40:48 santana Exp $
+# $Id: informix_adapter.rb,v 1.12 2007/10/15 05:20:42 santana Exp $
 
-# Copyright (c) 2006, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
+# Copyright (c) 2006-2007, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
