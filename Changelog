@@ -1,3 +1,15 @@
+1.1.0 12/5/2007
+------------------
+Features:
+	* DECIMAL support
+
+Bugs fixed:
+	* db/schema.rb was not being generated.
+	* After DECIMAL support was added to ActiveRecord, all DECIMAL columns were
+	  being converted to integers.
+	  Noticed by Andres Rafael <aandresrafael at gmail>
+
+
 1.0.0 10/20/2007
 ------------------
 Features:
