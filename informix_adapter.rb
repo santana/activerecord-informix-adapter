@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.14 2007/10/18 00:34:10 santana Exp $
+# $Id: informix_adapter.rb,v 1.15 2007/12/06 01:43:11 santana Exp $
 
 # Copyright (c) 2006-2007, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -46,21 +46,61 @@ module ActiveRecord
 
     after_save :write_lobs
     private
-    def write_lobs
-      if connection.is_a?(ConnectionAdapters::InformixAdapter)
-        self.class.columns.select { |c| [:text, :binary].include?(c.type) }.each { |c|
+      def write_lobs
+        return if !connection.is_a?(ConnectionAdapters::InformixAdapter)
+        self.class.columns.each do |c|
           value = self[c.name]
-          next if value.nil?  || value == ''
-          qry = "update #{self.class.table_name} set #{c.name} = ? where #{self.class.primary_key} = #{quote(id)}"
-          stmt = connection.prepare(qry)
-          stmt.execute(StringIO.new(value))
-          stmt.drop
-        }
+          next if ![:text, :binary].include? c.type || value.nil? || value == ''
+          connection.raw_connection.prepare(<<-end_sql) do |stmt|
+              UPDATE #{self.class.table_name} SET #{c.name} = ?
+              WHERE #{self.class.primary_key} = #{quote_value(id)}
+            end_sql
+            stmt.execute(StringIO.new(value))
+          end
+        end
       end
-    end
   end # class Base
 
   module ConnectionAdapters
+    class InformixColumn < Column
+      def initialize(column)
+        sql_type = make_type(column[:stype], column[:length],
+                             column[:precision], column[:scale])
+        super(column[:name], column[:default], sql_type, column[:nullable])
+      end
+
+      private
+        IFX_TYPES_SUBSET = %w(CHAR CHARACTER CHARACTER\ VARYING DECIMAL FLOAT
+                              LIST LVARCHAR MONEY MULTISET NCHAR NUMERIC
+                              NVARCHAR SERIAL SERIAL8 VARCHAR).freeze
+
+        def make_type(type, limit, prec, scale)
+          type.sub!(/money/i, 'DECIMAL')
+          if IFX_TYPES_SUBSET.include? type.upcase
+            if prec == 0
+              "#{type}(#{limit})" 
+            else
+              "#{type}(#{prec},#{scale})"
+            end
+          elsif type =~ /datetime/i
+            type = "time" if prec == 6
+            type
+          elsif type =~ /byte/i
+            "binary"
+          else
+            type
+          end
+        end
+
+        def simplified_type(sql_type)
+          if sql_type =~ /serial/i
+            :primary_key
+          else
+            super
+          end
+        end
+    end
+
     # This adapter requires the Informix driver for Ruby
     # http://ruby-informix.rubyforge.org
     #
@@ -73,9 +113,12 @@ module ActiveRecord
     class InformixAdapter < AbstractAdapter
       def initialize(db, logger)
         super
-        stmt = db.prepare("select dbinfo('version', 'major') version from systables where tabid = 1")
-        @ifx_version = stmt.execute['version'].to_i
-        stmt.drop
+        @ifx_version = db.prepare(<<-end_sql) do |stmt|
+            SELECT dbinfo('version', 'major') version FROM systables
+            WHERE tabid = 1
+          end_sql
+          stmt.execute['version'].to_i
+        end
       end
 
       def native_database_types
@@ -85,6 +128,7 @@ module ActiveRecord
           :text        => { :name => "text" },
           :integer     => { :name => "integer" },
           :float       => { :name => "float" },
+          :decimal     => { :name => "decimal" },
           :datetime    => { :name => "datetime year to second" },
           :timestamp   => { :name => "datetime year to second" },
           :time        => { :name => "datetime hour to second" },
@@ -180,37 +224,15 @@ module ActiveRecord
 
       # SCHEMA STATEMENTS =====================================
       def tables(name = nil)
-        c = @connection.cursor("SELECT tabname from systables WHERE tabid > 99")
-        tables = c.open.fetch_all
-        c.drop
-        tables.flatten
+        @connection.cursor(<<-end_sql) do |cur|
+            SELECT tabname FROM systables WHERE tabid > 99 AND tabtype != 'Q'
+          end_sql
+          cur.open.fetch_all.flatten
+        end
       end
 
       def columns(table_name, name = nil)
-        result = @connection.columns(table_name)
-        columns = []
-        result.each { |column|
-          columns << Column.new(column[:name], column[:default],
-            make_type(column[:stype], column[:precision]), column[:nullable])
-        }
-        columns
-      end
-
-      def make_type(type, prec)
-        types = %w(CHAR CHARACTER CHARACTER\ VARYING DECIMAL FLOAT LIST
-          LVARCHAR MONEY MULTISET NCHAR NUMERIC NVARCHAR SERIAL SERIAL8
-          VARCHAR)
-        type.sub!(/money/i, 'decimal')
-        if types.include? type.upcase
-          "#{type}(#{prec})" 
-        elsif type =~ /datetime/i
-          type = "time" if prec == 6
-          type
-        elsif type =~ /byte/i
-          "binary"
-        else
-          type
-        end
+        @connection.columns(table_name).map {|col| InformixColumn.new(col) }
       end
 
       # MIGRATION =========================================
@@ -230,7 +252,6 @@ module ActiveRecord
       # XXX
       def indexes(table_name, name = nil)
         indexes = []
-        indexes
       end
             
       def create_table(name, options = {})
