@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.16 2008/04/02 05:39:45 santana Exp $
+# $Id: informix_adapter.rb,v 1.17 2008/04/02 06:27:06 santana Exp $
 
 # Copyright (c) 2006-2008, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -159,7 +159,7 @@ module ActiveRecord
       end
 
       def execute(sql, name = nil)
-        log(sql, name) { @connection.execute(sql) }
+        log(sql, name) { @connection.immediate(sql) }
       end
 
       def prepare(sql, name = nil)
@@ -167,7 +167,7 @@ module ActiveRecord
       end
 
       def insert(sql, name= nil, pk= nil, id_value= nil, sequence_name = nil)
-        log(sql, name) { @connection.execute(sql) }
+        execute(sql)
         id_value
       end
 
@@ -175,7 +175,7 @@ module ActiveRecord
       alias_method :delete, :execute
 
       def begin_db_transaction
-        @connection.execute("begin work")
+        execute("begin work")
       end
 
       def commit_db_transaction
@@ -235,11 +235,11 @@ module ActiveRecord
       end
 
       def drop_database(name)
-        @connection.execute("drop database #{name}")
+        execute("drop database #{name}")
       end
 
       def create_database(name)
-        @connection.execute("create database #{name}")
+        execute("create database #{name}")
       end
 
       # XXX
