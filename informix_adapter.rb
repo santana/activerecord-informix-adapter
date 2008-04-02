@@ -1,6 +1,6 @@
-# $Id: informix_adapter.rb,v 1.15 2007/12/06 01:43:11 santana Exp $
+# $Id: informix_adapter.rb,v 1.16 2008/04/02 05:39:45 santana Exp $
 
-# Copyright (c) 2006-2007, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
+# Copyright (c) 2006-2008, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -51,12 +51,10 @@ module ActiveRecord
         self.class.columns.each do |c|
           value = self[c.name]
           next if ![:text, :binary].include? c.type || value.nil? || value == ''
-          connection.raw_connection.prepare(<<-end_sql) do |stmt|
+          connection.raw_connection.execute(<<-end_sql, StringIO.new(value))
               UPDATE #{self.class.table_name} SET #{c.name} = ?
               WHERE #{self.class.primary_key} = #{quote_value(id)}
-            end_sql
-            stmt.execute(StringIO.new(value))
-          end
+          end_sql
         end
       end
   end # class Base
@@ -101,7 +99,7 @@ module ActiveRecord
         end
     end
 
-    # This adapter requires the Informix driver for Ruby
+    # This adapter requires Ruby/Informix
     # http://ruby-informix.rubyforge.org
     #
     # Options:
@@ -113,12 +111,7 @@ module ActiveRecord
     class InformixAdapter < AbstractAdapter
       def initialize(db, logger)
         super
-        @ifx_version = db.prepare(<<-end_sql) do |stmt|
-            SELECT dbinfo('version', 'major') version FROM systables
-            WHERE tabid = 1
-          end_sql
-          stmt.execute['version'].to_i
-        end
+        @ifx_version = db.version.major
       end
 
       def native_database_types
