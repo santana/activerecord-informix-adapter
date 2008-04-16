@@ -1,4 +1,4 @@
-# $Id: informix_adapter.rb,v 1.17 2008/04/02 06:27:06 santana Exp $
+# $Id: informix_adapter.rb,v 1.18 2008/04/16 14:51:34 santana Exp $
 
 # Copyright (c) 2006-2008, Gerardo Santana Gomez Garrido <gerardo.santana@gmail.com>
 # All rights reserved.
@@ -111,7 +111,7 @@ module ActiveRecord
     class InformixAdapter < AbstractAdapter
       def initialize(db, logger)
         super
-        @ifx_version = db.version.major
+        @ifx_version = db.version.major.to_i
       end
 
       def native_database_types
