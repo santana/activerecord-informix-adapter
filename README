@@ -1,19 +1,13 @@
-Rails/Informix
----------------
-ActiveRecord adapter to bring O/RM to IBM Informix Dynamic Server.
+= Rails/Informix -- ActiveRecord adapter for Informix
 
-For installation instructions please read INSTALL. Current information can be
-found at http://rails-informix.rubyforge.org
+== Motivation
 
-1. Rails configuration
-2. Informix configuration
-3. Caveats
+The situation that started it all [link][http://santanatechnotes.blogspot.com/2006/03/informix-adapter-for-ruby-on-rails.html].
 
+== Rails configuration
 
-1. Rails configuration
-
-  The adapter has three options: database, username and password. Only
-  database is mandatory. A sample database.yml file would look like this:
+The adapter has three options: database, username and password. Only
+database is mandatory. A sample database.yml file would look like this:
 
   development:
     adapter: informix
@@ -21,27 +15,22 @@ found at http://rails-informix.rubyforge.org
     username: santana
     password: secret
 
-  If no username and password are specified, the user running the web server is
-  used.
+If no username and password are specified, the user running the web server is
+used.
+
+== Informix configuration
+
+* You must have a sequence for each table in the form #{tablename}_seq.
+
+Example:
+
+  create table customers(id serial, name varchar(40));
+  create sequence customers_seq;
+
+* BYTE/TEXT columns must allow NULLs.
 
 
-2. Informix configuration
+== Caveats
 
-  * You must have a sequence for each table in the form #{tablename}_seq.
-
-    Example:
-
-      create table customers(id serial, name varchar(40));
-      create sequence customers_seq;
-
-  * BYTE/TEXT columns must allow NULLs.
-
-
-3. Caveats
-
-  * Prefer Informix 10 or above over Informix 9. Rails/Informix makes use of
-    the SKIP option for pagination, which is only available since Informix 10.
-
------------------------------------------
-Gerardo Santana <gerardo.santana gmail>
-http://santanatechnotes.blogspot.com
+* Prefer Informix 10 or above over Informix 9. Rails/Informix makes use of
+the SKIP option for pagination, which is only available since Informix 10.
