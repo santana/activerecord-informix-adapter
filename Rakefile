@@ -8,6 +8,7 @@ PKG_VERSION = "1.1.1"
 spec = Gem::Specification.new do |s|
   s.name = PKG_NAME
   s.summary = 'Informix adapter for Active Record'
+  s.description = 'Active Record adapter for connecting to an IBM Informix database'
   s.version = PKG_VERSION
 
   s.add_dependency 'activerecord', '>= 1.15.4.7707'
