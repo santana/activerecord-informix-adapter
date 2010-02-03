@@ -1,3 +1,10 @@
+1.1.1 2010-02-03
+------------------
+Bugs fixed:
+	* Updated dependency to Ruby/Informix 0.7.3, which fixes a problem when
+	  running on Ruby 1.8.7
+
+
 1.1.0 12/5/2007
 ------------------
 Features:
@@ -7,7 +14,7 @@ Bugs fixed:
 	* db/schema.rb was not being generated.
 	* After DECIMAL support was added to ActiveRecord, all DECIMAL columns were
 	  being converted to integers.
-	  Noticed by Andres Rafael <aandresrafael at gmail>
+	  Noticed by Andres Rafael Aguilar <aandresrafael at gmail>
 
 
 1.0.0 10/20/2007
