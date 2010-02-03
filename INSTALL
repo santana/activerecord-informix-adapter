@@ -3,27 +3,10 @@ Rails/Informix installation
 
 1. Requirements
 
-	* Ruby/Informix 0.7.0 or above
+	* ActiveRecord 1.15 or above
+	* Ruby/Informix 0.7.3 or above
 
 
-2. Installation instructions for Ruby on Rails 1.x
-
-  Copy the file informix_adapter.rb into the directory:
-
-  $RUBYLIB/gems/1.8/gems/activerecord-*/lib/active_record/connection_adapters/
-
-  where RUBYLIB is probably /usr/local/lib/ruby in Unix, and C:\ruby\lib\ruby
-  in Windows.
-
-  Then edit the file:
-
-  $RUBYLIB/gems/1.8/gems/activerecord-*/lib/active_record.rb
-
-  to add "informix" to RAILS_CONNECTION_ADAPTERS:
-
-  RAILS_CONNECTION_ADAPTERS = %w( mysql postgresql sqlite firebird sqlserver db2 oracle sybase openbase informix)
-
-
-3. Installation instructions for Ruby on Rails 2 and above
+2. Installation instructions
 
   gem install activerecord-informix-adapter
